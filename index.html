@@ -467,28 +467,15 @@
     const existing = words.map(w => w.word).join(', ');
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `토익 700점 수준의 영단어 5개를 생성해줘.
-다음 단어는 이미 있으니 반드시 제외해줘: ${existing || '없음'}
-
-반드시 아래 JSON 배열 형식으로만 응답해. 다른 텍스트 없이 JSON만:
-[{"word":"단어","pos":"noun|verb|adjective|adverb 중 하나","meaning":"한국어 뜻","example":"영어 예시 문장"}]
-
-조건: 토익 빈출 단어, 비즈니스/일상 영어 예문, 품사는 noun/verb/adjective/adverb 중 하나`
-          }]
-        })
+        body: JSON.stringify({ existing })
       });
 
       const data = await res.json();
-      const text = data.content[0].text.trim().replace(/```json|```/g,'').trim();
-      const generated = JSON.parse(text);
+      if (data.error) throw new Error(data.error);
+      const generated = data.words;
 
       sessions.push({ id: sessionId, dayNum, date: today, count: generated.length, auto: true });
       generated.forEach(w => {
